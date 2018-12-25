@@ -1,0 +1,20 @@
+{
+  "name": "unitymultiplayerbackend",
+  "version": "1.0.0",
+  "description": "back end of a multiplayer video game this project will be deployedinto heroku later",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Unity",
+    "WebSocket",
+    "Heroku"
+  ],
+  "author": "khayri",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "socket.io": "^2.2.0"
+  }
+}
