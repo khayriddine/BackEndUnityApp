@@ -15,21 +15,44 @@ app.get('/',function(req,res){
 });
 var io = require('socket.io').listen(server);
 io.sockets.on('connection',function(socket){
-    //allClients.push(socket);
     
+    var CurrentPlayer;
     //socket.emit('message','Your are connected Now!!');
     socket.on('newClient',function(newClient){
+        CurrentPlayer = newClient;
+        CurrentPlayer.id = socket.id;
+        console.log("new player " + CurrentPlayer.pseudo +" : "+ CurrentPlayer.id + " is connected !!" + "(" + (allClients.length+1)+")");
+        allClients.forEach(element => {
+            socket.emit('ancientClients',element);
+        });
+        allClients.push(CurrentPlayer);
         socket.broadcast.emit('new player connected',newClient);
-        console.log("new player " + newClient.pseudo + " is connected !!");
     });
-/*
-
+    socket.on('dis',function(){
+        console.log("socket.id");
+        //socket.broadcast.emit('userDisconnect',socket.id);
+    });
+    
     socket.on('disconnect', function() {
-		console.log('player disconnect');
-		//socket.broadcast.emit('other player disconnected', currentPlayer);
-		var i = allClients.indexOf(socket);
-        allClients.splice(i, 1);
-	});*/
+        
+            for(var i=0;i<allClients.length;i++){
+                if(allClients[i].id == CurrentPlayer.id){
+
+                    io.emit('userDisconnect', CurrentPlayer);
+                    
+                    console.log(allClients[i].id + " disconnected !!");
+                    allClients.splice(i, 1);
+                    
+                   
+                }
+            }
+            
+        
+        
+    });
+
+
+    
 });
 
 
