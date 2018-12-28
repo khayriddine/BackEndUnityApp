@@ -23,8 +23,37 @@ io.sockets.on('connection',function(socket){
     socket.on('newClient',function(newClient){
        
         CurrentPlayer = newClient;
-        socket.join(CurrentPlayer.color);
-
+        socket.join(CurrentPlayer.color,function(){
+            socket.on('chat',function(data){
+                var headMsg = data.msg.substring(0,2);
+                data.color = CurrentPlayer.color;
+                
+                if(headMsg == "/a"){
+                    var msg = "[ ALL ]"+CurrentPlayer.pseudo +" : " + data.msg.substring(2);
+                    data.msg = msg;
+                    
+                    socket.broadcast.emit("broadcastMsg",data);
+                }else if (headMsg[0] =="/"){
+                    colors.forEach(color => {
+                        if(color[0] == headMsg[1])
+                        {
+                            var msg = "[ "+color+" ]" + CurrentPlayer.pseudo +" : " + data.msg.substring(2);
+                            data.msg = msg;
+                            socket.to(color).emit("broadcastMsg",data);
+                            socket.to(CurrentPlayer.color).emit("broadcastMsg",data);
+                        }
+                    });
+                    
+                }else{
+                    
+                    var msg = CurrentPlayer.pseudo + " : " + data.msg;
+                    data.msg = msg;
+                    socket.to(CurrentPlayer.color).broadcast.emit("broadcastMsg",data);
+                    //io.to(CurrentPlayer.color).emit("broadcastMsg",data);
+                        
+                }
+            });
+        });
         CurrentPlayer.id = socket.id;
         console.log("new player " + CurrentPlayer.pseudo +" : "+ CurrentPlayer.id + " is connected !!" + "(" + (allClients.length+1)+")");
         allClients.forEach(element => {
@@ -33,33 +62,7 @@ io.sockets.on('connection',function(socket){
         allClients.push(CurrentPlayer);
         socket.broadcast.emit('new player connected',newClient);
     });
-    socket.on('chat',function(data){
-        var headMsg = data.msg.substring(0,2);
-        
-        
-        if(headMsg == "/a"){
-            var msg = "[ ALL ]"+CurrentPlayer.pseudo +" : " + data.msg.substring(2);
-            data.msg = msg;
-            console.log(msg);
-            socket.broadcast.emit("broadcastMsg",data);
-        }else if (headMsg[0] =="/"){
-            colors.forEach(color => {
-                if(color[1] == headMsg[1])
-                {
-                    var msg = "[ "+color+" ]" + CurrentPlayer.pseudo +" : " + data.msg.substring(2);
-                    socket.to(color).emit("broadcastMsg",data);
-                    socket.to(CurrentPlayer.color).emit("broadcastMsg",data);
-                }
-            });
-            
-        }else{
-            var msg = CurrentPlayer.pseudo + " : " +data.msg;
-            console.log(CurrentPlayer);
-            socket.to(CurrentPlayer.color).emit("broadcastMsg",data);
-            //io.to(CurrentPlayer.color).emit("broadcastMsg",data);
-                
-        }
-    });
+   
     socket.on('dis',function(){
         console.log("socket.id");
         //socket.broadcast.emit('userDisconnect',socket.id);
