@@ -7,6 +7,7 @@ var app = express();
 var server = http.Server(app);
 
 var allClients = [];
+var colors = ['blue','red','yellow','green','white','purple'];
 app.get('/',function(req,res){
     fs.readFile('index.html','utf-8',function(err,content){
         res.writeHead(200,{ "content-type":"text/html" });
@@ -14,12 +15,16 @@ app.get('/',function(req,res){
     });
 });
 var io = require('socket.io').listen(server);
-io.sockets.on('connection',function(socket){
-    
+//var nsp = io.of('/test');
+//nsp.on('connection',function(socket){
+io.sockets.on('connection',function(socket){   
     var CurrentPlayer;
     //socket.emit('message','Your are connected Now!!');
     socket.on('newClient',function(newClient){
+       
         CurrentPlayer = newClient;
+        socket.join(CurrentPlayer.color);
+
         CurrentPlayer.id = socket.id;
         console.log("new player " + CurrentPlayer.pseudo +" : "+ CurrentPlayer.id + " is connected !!" + "(" + (allClients.length+1)+")");
         allClients.forEach(element => {
@@ -27,6 +32,33 @@ io.sockets.on('connection',function(socket){
         });
         allClients.push(CurrentPlayer);
         socket.broadcast.emit('new player connected',newClient);
+    });
+    socket.on('chat',function(data){
+        var headMsg = data.msg.substring(0,2);
+        
+        
+        if(headMsg == "/a"){
+            var msg = "[ ALL ]"+CurrentPlayer.pseudo +" : " + data.msg.substring(2);
+            data.msg = msg;
+            console.log(msg);
+            socket.broadcast.emit("broadcastMsg",data);
+        }else if (headMsg[0] =="/"){
+            colors.forEach(color => {
+                if(color[1] == headMsg[1])
+                {
+                    var msg = "[ "+color+" ]" + CurrentPlayer.pseudo +" : " + data.msg.substring(2);
+                    socket.to(color).emit("broadcastMsg",data);
+                    socket.to(CurrentPlayer.color).emit("broadcastMsg",data);
+                }
+            });
+            
+        }else{
+            var msg = CurrentPlayer.pseudo + " : " +data.msg;
+            console.log(CurrentPlayer);
+            socket.to(CurrentPlayer.color).emit("broadcastMsg",data);
+            //io.to(CurrentPlayer.color).emit("broadcastMsg",data);
+                
+        }
     });
     socket.on('dis',function(){
         console.log("socket.id");
@@ -38,8 +70,8 @@ io.sockets.on('connection',function(socket){
             for(var i=0;i<allClients.length;i++){
                 if(allClients[i].id == CurrentPlayer.id){
 
+                    //nsp.emit('userDisconnect', CurrentPlayer);
                     io.emit('userDisconnect', CurrentPlayer);
-                    
                     console.log(allClients[i].id + " disconnected !!");
                     allClients.splice(i, 1);
                     
